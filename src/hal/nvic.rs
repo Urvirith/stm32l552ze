@@ -25,7 +25,7 @@ struct NVICReg {
 	pub ipr:		[u8; 480],	    /* Interrupt Priority Registers */
 }
 
-struct Nvic {
+pub struct Nvic {
 	registers: &'static mut NVICReg
 }
 

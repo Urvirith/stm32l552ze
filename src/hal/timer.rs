@@ -58,6 +58,10 @@ pub enum Direction {Upcount, Downcount}
 const CMS_MASK:         u32 = common::MASK_2_BIT;       /* Mode is mask required, here we set the mask to two bit 11 */
 const CKD_MASK:         u32 = common::MASK_2_BIT;       /* Mode is mask required, here we set the mask to two bit 11 */
 
+/* CCMR */
+const CCS_MASK:         u32 = common::MASK_2_BIT;
+const OCM_MASK:         u32 = common::MASK_3_BIT;
+
 /* Register Bits */
 /* CR1 */
 const EN_BIT:           u32 = common::BIT_0;            /* 0 = Disabled, 1 = Enabled */
@@ -71,13 +75,38 @@ const UIFREMAP_BIT:     u32 = common::BIT_11;           /* Output, 0 = Pulse, 1 
 /* SR */
 const UPDATE_BIT:       u32 = common::BIT_0;
 
+/* CCER */
+const CC1E_BIT:         u32 = common::BIT_0;            /* Capture/Compare Output Enable */
+const CC1P_BIT:         u32 = common::BIT_1;            /* Capture/Compare Output Polarity */
+const CC1NP_BIT:        u32 = common::BIT_3;            /* Capture/Compare Output Polarity */
+const CC2E_BIT:         u32 = common::BIT_4;            /* Capture/Compare Output Enable */
+const CC2P_BIT:         u32 = common::BIT_5;            /* Capture/Compare Output Polarity */
+const CC2NP_BIT:        u32 = common::BIT_7;            /* Capture/Compare Output Polarity */
+const CC3E_BIT:         u32 = common::BIT_8;            /* Capture/Compare Output Enable */
+const CC3P_BIT:         u32 = common::BIT_9;            /* Capture/Compare Output Polarity */
+const CC3NP_BIT:        u32 = common::BIT_11;           /* Capture/Compare Output Polarity */
+const CC4E_BIT:         u32 = common::BIT_12;           /* Capture/Compare Output Enable */
+const CC4P_BIT:         u32 = common::BIT_13;           /* Capture/Compare Output Polarity */
+const CC4NP_BIT:        u32 = common::BIT_15;           /* Capture/Compare Output Polarity */
+
 /* Register Offsets */
 /* CR1 */
 const CMS_OFFSET:       u32 = 5;                        /* 00 = Edge Aligned     01 = Center Aligned Down     10 = Center Aligned Up     11 - Center Aligned Up */
 const CKD_OFFSET:       u32 = 8;                        /* 00 = Tdts = Tclk_int  01 = Tdts = 2*Tclk_int       10 = Tdts = 4*Tclk_int     11 - Reserved */
 
+/* CCMR */
+const CC1S_OFFSET:      u32 = 0;                        /* Capture Compare 1 Mode 00: CC2 channel is configured as output 01: CC1 channel is configured as input, IC1 is mapped on TI1 10: CC1 channel is configured as input, IC1 is mapped on TI1 11: CC1 channel is configured as input, IC1 is mapped on TRC. This mode is working only if an internal trigger input is selected through the TS bit (TIMx_SMCR register) */
+const OC1M_OFFSET:      u32 = 4;                        /* Output Compare 1 Mode 0110: PWM mode 1 - In upcounting, channel 1 is active as long as TIMx_CNT<TIMx_CCR1 0111: PWM mode 1 - In upcounting, channel 1 is inactive as long as TIMx_CNT<TIMx_CCR1 else active. In downcounting, channel 1 is active as long as TIMx_CNT>TIMx_CCR1 else inactive. */
+const CC2S_OFFSET:      u32 = 8;                        /* Capture Compare 2 Mode 00: CC2 channel is configured as output 01: CC2 channel is configured as input, IC2 is mapped on TI2 10: CC2 channel is configured as input, IC2 is mapped on TI1 11: CC2 channel is configured as input, IC2 is mapped on TRC. This mode is working only if an internal trigger input is selected through the TS bit (TIMx_SMCR register) */
+const OC2M_OFFSET:      u32 = 12;                       /* Output Compare 2 Mode 0110: PWM mode 1 - In upcounting, channel 2 is active as long as TIMx_CNT<TIMx_CCR2 0111: PWM mode 2 - In upcounting, channel 2 is inactive as long as TIMx_CNT<TIMx_CCR2 else active. In downcounting, channel 2 is active as long as TIMx_CNT>TIMx_CCR2 else inactive. */
+
 /* CNT */
-const CLEAR_CNT:        u32 = 0;  
+const CLEAR_CNT:        u32 = 0;
+
+/* PWM */
+const PWM_MODE1:        u32 = 6;
+const PWM_MODE2:        u32 = 7;
+const CCS_OUTPUT:       u32 = 0;
 
 impl Timer {
     /* Initialize The Structure */
@@ -135,6 +164,11 @@ impl Timer {
     pub fn clr_flag(&self) {
         pointer::clr_ptr_vol_bit_u32(self.sr, UPDATE_BIT);
     }
+
+    /* Start Timer */
+    pub fn set_interrupt(&self) {
+        pointer::set_ptr_vol_bit_u32(self.dier, UPDATE_BIT);
+    }
     
     /* Read Counter */
     pub fn get_cnt(&self) -> u32 {
@@ -157,15 +191,15 @@ impl Timer {
     }
     
     /* Set Time and Scaling Of The Timer */
-    pub fn set_scl(&self, time: u32, clock_speed: u32, prescl: u32) {  
+    pub fn set_scl(&self, time: u32, clk_speed: u32, prescl: u32) {  
         let val;
         let psc;
         
         if prescl == 0 {
-            val = (time * clock_speed) - 1;
+            val = (time * clk_speed) - 1;
             psc = prescl;
         } else {
-            val = ((time * clock_speed) / prescl) - 1;
+            val = ((time * clk_speed) / prescl) - 1;
             psc = prescl - 1;
         }
     
@@ -179,5 +213,61 @@ impl Timer {
             // BLANK WAIT, WORKS DUE TO VOLITILE READ
         }
         self.clr_flag();
+    }
+
+    /* Setup For PWM on CH 1 */
+    pub fn set_pwm_ccr1(&self, cnt: u32) {
+        pointer::set_ptr_vol_raw_u32(self.ccr1, cnt);
+    }
+
+    /* Setup For PWM on CH 2 */
+    pub fn set_pwm_ccr2(&self, cnt: u32) {
+        pointer::set_ptr_vol_raw_u32(self.ccr2, cnt);
+    }
+
+    /* Setup For PWM on CH 3 */
+    pub fn set_pwm_ccr3(&self, cnt: u32) {
+        pointer::set_ptr_vol_raw_u32(self.ccr3, cnt);
+    }
+
+    /* Setup For PWM on CH 4 */
+    pub fn set_pwm_ccr4(&self, cnt: u32) {
+        pointer::set_ptr_vol_raw_u32(self.ccr4, cnt);
+    }
+
+    /* Default Set Up For PWM */
+    pub fn set_pwm_ch1(&self) {
+        pointer::set_ptr_vol_u32(self.ccmr1, CC1S_OFFSET, CCS_MASK, CCS_OUTPUT);
+        pointer::set_ptr_vol_u32(self.ccmr1, OC1M_OFFSET, OCM_MASK, PWM_MODE1);
+        pointer::set_ptr_vol_bit_u32(self.ccer, CC1E_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC1P_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC1NP_BIT);
+    }
+
+    /* Default Set Up For PWM */
+    pub fn set_pwm_ch2(&self) {
+        pointer::set_ptr_vol_u32(self.ccmr1, CC2S_OFFSET, CCS_MASK, CCS_OUTPUT);
+        pointer::set_ptr_vol_u32(self.ccmr1, OC2M_OFFSET, OCM_MASK, PWM_MODE1);
+        pointer::set_ptr_vol_bit_u32(self.ccer, CC2E_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC2P_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC2NP_BIT);
+    }
+
+    /* Default Set Up For PWM */
+    pub fn set_pwm_ch3(&self) {
+        pointer::set_ptr_vol_u32(self.ccmr2, CC1S_OFFSET, CCS_MASK, CCS_OUTPUT);
+        pointer::set_ptr_vol_u32(self.ccmr2, OC1M_OFFSET, OCM_MASK, PWM_MODE1);
+        pointer::set_ptr_vol_bit_u32(self.ccer, CC3E_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC3P_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC3NP_BIT);
+    }
+
+    /* Default Set Up For PWM */
+    pub fn set_pwm_ch4(&self) {
+        pointer::set_ptr_vol_u32(self.ccmr2, CC2S_OFFSET, CCS_MASK, CCS_OUTPUT);
+        pointer::set_ptr_vol_u32(self.ccmr2, OC2M_OFFSET, OCM_MASK, PWM_MODE1);
+        pointer::set_ptr_vol_bit_u32(self.ccer, CC4E_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC4P_BIT);
+        pointer::clr_ptr_vol_bit_u32(self.ccer, CC4NP_BIT);
     }
 }
