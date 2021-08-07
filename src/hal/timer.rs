@@ -16,6 +16,7 @@ pub struct Timer {
     cnt:        *mut u32,       // Counter Register
     psc:        *mut u32,       // Prescaler Register
     arr:        *mut u32,       // Auto Reload Register
+    rcr:        *mut u32,       // Repetition Counter Register
     ccr1:       *mut u32,       // Capture/Compare Register 1
     ccr2:       *mut u32,       // Capture/Compare Register 2
     ccr3:       *mut u32,       // Capture/Compare Register 3
@@ -38,6 +39,7 @@ const CCER:     u32 = 0x20;
 const CNT:      u32 = 0x24;
 const PSC:      u32 = 0x28;
 const ARR:      u32 = 0x2C;
+const RCR:      u32 = 0x30;
 const CCR1:     u32 = 0x34;
 const CCR2:     u32 = 0x38;
 const CCR3:     u32 = 0x3C;
@@ -124,6 +126,7 @@ impl Timer {
             cnt:    (base + CNT)    as *mut u32,
             psc:    (base + PSC)    as *mut u32,
             arr:    (base + ARR)    as *mut u32,
+            rcr:    (base + RCR)    as *mut u32,
             ccr1:   (base + CCR1)   as *mut u32,
             ccr2:   (base + CCR2)   as *mut u32,
             ccr3:   (base + CCR3)   as *mut u32,
@@ -269,5 +272,19 @@ impl Timer {
         pointer::set_ptr_vol_bit_u32(self.ccer, CC4E_BIT);
         pointer::clr_ptr_vol_bit_u32(self.ccer, CC4P_BIT);
         pointer::clr_ptr_vol_bit_u32(self.ccer, CC4NP_BIT);
+    }
+
+    pub fn delay(&self, time: u32, clk_speed: u32, prescl: u32) {
+        self.set_scl(time, clk_speed, prescl);
+        self.start();
+        self.clr_flag();
+
+        while !self.get_flag() {
+            // SPIN HERE
+        }
+
+        self.stop();
+        self.clr_cnt();
+        self.clr_flag();
     }
 }
