@@ -5,7 +5,6 @@ use core::panic::PanicInfo;
 mod board;
 mod hal;
 mod axis;
-mod driver;
 
 const CLK:                  hal::common::MsiRange = hal::common::MsiRange::Clk16MHz;
 
