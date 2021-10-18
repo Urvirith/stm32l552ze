@@ -1,4 +1,4 @@
-
+use super::super::hal::spi;
 
 pub struct W5200 {
     cr1:        *mut u32,       // Control Register 1
@@ -9,6 +9,19 @@ pub struct W5200 {
     rxcrcpr:    *mut u32,       // Timeout Register
     txcrcpr:    *mut u32,       // Interrupt And Status Register
 }
+
+struct W5200IpAddress {
+    ip:                 [u16; 4],
+    subnet:             [u16; 4],
+    gateway:            [u16; 4],
+    mac:                [u16; 6]
+}
+
+/* SPI Conditions */
+pub const CLK_SETUP:        spi::ClockSetup =   spi::ClockSetup::RisingEdgeClockLow;
+pub const BIT_SETUP:        spi::BitFirst =     spi::BitFirst::Msb;
+pub const WORD_SETUP:       spi::DataSize =     spi::DataSize::Bits8;
+
 
 /* Common Register */
 /* Mode */

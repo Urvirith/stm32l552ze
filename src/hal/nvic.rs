@@ -6,7 +6,7 @@
 
 /* Nested vectored interrupt controller (NVIC) */
 
-use super::{common, pointer};
+use super::pointer;
 
 #[repr(C)]
 struct NVICReg {

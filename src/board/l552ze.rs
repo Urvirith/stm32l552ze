@@ -1,4 +1,4 @@
-use crate::hal::{common, gpio, usart};
+use super::super::hal::{common, gpio, usart};
 
 /* Register Base */
 /* Reset and Clock Control (RCC) */
@@ -121,6 +121,24 @@ pub const PORTA_PIN11:              u32 = 11;   //D10   RX
 pub const PORTA_PIN12:              u32 = 12;   //D2    TX
 pub const CAN_RX:                   u32 = PORTA_PIN11;
 pub const CAN_TX:                   u32 = PORTA_PIN12;
+
+/* SPI */
+pub const SPI_MODE:                 gpio::Mode = gpio::Mode::Alt;
+pub const SPI_OTYPE:                gpio::OType = gpio::OType::PushPull;
+pub const SPI_AF:                   gpio::AltFunc = gpio::AltFunc::Af5;
+pub const PORTB_PIN4:               u32 = 4;
+pub const SPI1_MISO:                u32 = PORTB_PIN4;
+pub const PORTB_PIN5:               u32 = 5;
+pub const SPI1_MOSI:                u32 = PORTB_PIN5;
+pub const PORTB_PIN3:               u32 = 3;
+pub const SPI1_SCK:                 u32 = PORTB_PIN3;
+pub const PORTA_PIN4:               u32 = 4;
+pub const SPI1_NSS:                 u32 = PORTA_PIN4;
+pub const PORTA_PIN7:               u32 = 7;
+pub const SPI1_SS:                  u32 = PORTA_PIN7;
+pub const SPI1_SS_MODE:             gpio::Mode = gpio::Mode::In;
+pub const SPI1_SS_OTYPE:            gpio::OType = gpio::OType::PushPull;
+pub const SPI1_SS_AF:               gpio::AltFunc = gpio::AltFunc::Af0;
 
 /* GPIO SETUP */
 pub const CAN_MODE:                 gpio::Mode = gpio::Mode::Alt;

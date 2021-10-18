@@ -110,7 +110,7 @@ const DS_OFFSET:        u32 = 8;
 const FRLVL_OFFSET:     u32 = 9;
 const FTLVL_OFFSET:     u32 = 11;
 
-const TIMEOUT:          u32 = common::WAIT100US;
+const TIMEOUT:          u32 = 1600;
 
 
 impl Spi {
@@ -234,16 +234,13 @@ impl Spi {
         while pointer::get_ptr_vol_bit_u32(self.sr, RXNE_BIT) {
             if i < buf.len() {
                 buf[i] = pointer::get_ptr_vol_raw_u8(self.dr); // Will need to be changed if handling 16 bit words etc
+                f = 0;
                 i += 1;
             } // Possible Need To Put Else Return here....
 
             // Return if i = len and len is set, possible to return terminating char if needed or pin pointer
             if ((i >= len) && (len > 0)) || i >= buf.len() { 
                 return i;
-            }
-
-            if self.error() {
-                //return (self.error_byte() + 0x10) as usize;
             }
 
             if (len > 0) && (i < len) {
