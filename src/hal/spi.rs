@@ -231,7 +231,7 @@ impl Spi {
         let mut i = 0;
         let mut f = 0; // CONVERT TO FAULT TIMER
 
-        while pointer::get_ptr_vol_bit_u32(self.sr, RXNE_BIT) {
+        while pointer::get_ptr_vol_u32(self.sr, FRLVL_OFFSET, FRLVL_MASK) != 0 {
             if i < buf.len() {
                 buf[i] = pointer::get_ptr_vol_raw_u8(self.dr); // Will need to be changed if handling 16 bit words etc
                 f = 0;
@@ -243,15 +243,11 @@ impl Spi {
                 return i;
             }
 
-            if (len > 0) && (i < len) {
-                while !pointer::get_ptr_vol_bit_u32(self.sr, RXNE_BIT) {
-                    // SPIN WHILE THE RXNE IS NOT EMPTY, DUMP OUT IF ISSUE COMES UP
-                    if f > TIMEOUT {
-                        return 0;
-                    }
-                    f+=1;
-                }
-            }
+            if f < TIMEOUT {
+                f+=1;
+            } else {
+                return 0;
+            }    
         }
         return i;
     }
@@ -265,11 +261,6 @@ impl Spi {
                 pointer::set_ptr_vol_raw_u8(self.dr, buf[i]);
                 i += 1;
             }
-
-            if self.error_byte() > 0 {
-                //return self.error_byte();
-            }
-
         }
 
         pointer::set_ptr_vol_bit_u32(self.cr1, CRCNEXT_BIT);

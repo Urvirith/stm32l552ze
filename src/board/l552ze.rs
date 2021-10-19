@@ -97,11 +97,11 @@ pub const TIMER2_RCC_APB1R1_ENABLE: u32 = common::BIT_0;
 pub const TIMER3_RCC_APB1R1_ENABLE: u32 = common::BIT_1;
 
 /* USART (Universal Synchronous and Asynchronous Receiver Transmitter) */
-pub const USART2_RCC_APB1R1_ENABLE: u32 = common::BIT_17;
-pub const PORTA_PIN2:               u32 = 2;    //A7    TX
-pub const PORTA_PIN3:               u32 = 3;    //A2    RX
-pub const USART2_TX:                u32 = PORTA_PIN2;
-pub const USART2_RX:                u32 = PORTA_PIN3;
+pub const USART3_RCC_APB1R1_ENABLE: u32 = common::BIT_18;
+pub const PORTD_PIN8:               u32 = 8;    //A7    TX
+pub const PORTD_PIN9:               u32 = 9;    //A2    RX
+pub const USART3_TX:                u32 = PORTD_PIN8;
+pub const USART3_RX:                u32 = PORTD_PIN9;
 
 /* GPIO SETUP */
 pub const USART_MODE:               gpio::Mode = gpio::Mode::Alt;

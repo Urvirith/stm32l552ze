@@ -19,9 +19,11 @@ pub extern "C" fn _system_init() {
     rcc.write_ahb2_enr(board::l552ze::RCC_GPIOA_AHB2EN);
     rcc.write_ahb2_enr(board::l552ze::RCC_GPIOB_AHB2EN);
     rcc.write_ahb2_enr(board::l552ze::RCC_GPIOC_AHB2EN);
-    rcc.write_ahb2_enr(board::l552ze::RCC_GPIOE_AHB2EN);
+    rcc.write_ahb2_enr(board::l552ze::RCC_GPIOD_AHB2EN);
     rcc.write_apb1_enr1(board::l552ze::TIMER2_RCC_APB1R1_ENABLE);
     rcc.write_apb1_enr1(board::l552ze::TIMER3_RCC_APB1R1_ENABLE);
+    rcc.write_apb2_enr(board::l552ze::SPI1_RCC_APB2R_ENABLE);
+    rcc.write_apb1_enr1(board::l552ze::USART3_RCC_APB1R1_ENABLE);
 }
 
 
@@ -32,10 +34,18 @@ pub extern "C" fn _start() {
     let gpioa =     hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
     let gpiob =     hal::gpio::Gpio::init(board::l552ze::GPIOB_BASE);
     let gpioc =     hal::gpio::Gpio::init(board::l552ze::GPIOC_BASE);
+    let gpiod =     hal::gpio::Gpio::init(board::l552ze::GPIOD_BASE);
     let seq_timer = hal::timer::Timer::init(board::l552ze::TIMER2_BASE);
+    let int_timer = hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
     let mut nvic =  hal::nvic::Nvic::init(board::l552ze::NVIC_BASE);
-    let spi =   hal::spi::Spi::init(board::l552ze::SPI1_BASE);
+    let spi =       hal::spi::Spi::init(board::l552ze::SPI1_BASE);
+    let usart =     hal::usart::Usart::init(board::l552ze::USART3_BASE);
     
+    /* USART */
+    gpiod.otype(board::l552ze::USART3_TX, board::l552ze::USART_MODE, board::l552ze::USART_OTYPE, board::l552ze::USART_AF);
+    gpiod.otype(board::l552ze::USART3_RX, board::l552ze::USART_MODE, board::l552ze::USART_OTYPE, board::l552ze::USART_AF);
+    usart.open(hal::usart::WordLen::Bits8, hal::usart::StopLen::StopBit1, hal::usart::BaudRate::Baud921600, 16000, hal::usart::OverSample::Oversample16);
+
     /* SPI 1 Setup */
     gpiob.otype(board::l552ze::SPI1_MISO, board::l552ze::SPI_MODE, board::l552ze::SPI_OTYPE, board::l552ze::SPI_AF);
     gpiob.otype(board::l552ze::SPI1_MOSI, board::l552ze::SPI_MODE, board::l552ze::SPI_OTYPE, board::l552ze::SPI_AF);
@@ -52,12 +62,17 @@ pub extern "C" fn _start() {
     seq_timer.set_scl(1000, freq, freq);
     seq_timer.start();
 
-    nvic.set_interrupt(board::l552ze::NvicIrq::TIM2_IRQ as u32);
+    int_timer.open(hal::timer::TimerType::Cont, hal::timer::Direction::Upcount);
+    int_timer.set_scl(1000, freq, freq);
+    int_timer.set_interrupt();
+    int_timer.start();
+
+    nvic.set_interrupt(board::l552ze::NvicIrq::TIM3_IRQ as u32);
 
     let mut i = 0;
-    let spi_obuf:[u8; 4] = [0x03, 0x06, 0x04, 0x0D];
+    let mut buf:[u8; 8] = [0x03, 0x01, 0x02, 0x03 ,0x04, 0x05, 0x06, 0x0D];
+    let mut spi_obuf:[u8; 4] = [0x03, 0x06, 0x04, 0x0D];
     let mut spi_ibuf:[u8; 4] = [0x00, 0x00, 0x00, 0x00];
-
 
     loop {
         if seq_timer.get_flag() { 
@@ -72,11 +87,18 @@ pub extern "C" fn _start() {
             }
 
             let len = spi_ibuf.len();
+            buf[1] = i;
 
             spi.enable();
             spi.write(&spi_obuf);
             spi.disable();
             spi.read(&mut spi_ibuf, len);
+
+            spi_obuf[1] = i;
+
+            usart.write(&spi_ibuf);
+            usart.write(&buf);
+
 
             i += 1;
             seq_timer.clr_flag();
@@ -90,8 +112,11 @@ pub extern "C" fn __aeabi_unwind_cpp_pr0() {
 }
 
 #[no_mangle]
-pub extern "C" fn TIM2_IRQHandler() {
+pub extern "C" fn TIM3_IRQHandler() {
     let gpioa =     hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
+    let int_timer = hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
+
+    int_timer.clr_flag();
 
     if gpioa.get_pin(board::l552ze::LED_RED) {
         gpioa.clr_pin(board::l552ze::LED_RED);
