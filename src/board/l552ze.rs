@@ -1,4 +1,4 @@
-use super::super::hal::{common, gpio, usart};
+use super::super::stm32hal::{common, gpio, usart};
 
 /* Register Base */
 /* Reset and Clock Control (RCC) */

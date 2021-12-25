@@ -1,4 +1,4 @@
-use super::super::hal::spi;
+use super::super::stm32hal::spi;
 
 pub struct W5200 {
     cr1:        *mut u32,       // Control Register 1

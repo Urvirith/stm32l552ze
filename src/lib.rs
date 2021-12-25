@@ -3,17 +3,17 @@
 use core::panic::PanicInfo;
 
 mod board;
-mod hal;
+mod stm32hal;
 mod axis;
 mod driver;
 
-const CLK:                  hal::common::MsiRange = hal::common::MsiRange::Clk16MHz;
+const CLK:                  stm32hal::common::MsiRange = stm32hal::common::MsiRange::Clk16MHz;
 
 
 #[no_mangle]
 pub extern "C" fn _system_init() {
     /* RCC Enabling of the bus */
-    let rcc = hal::rcc::Rcc::init(board::l552ze::RCC_BASE);
+    let rcc = stm32hal::rcc::Rcc::init(board::l552ze::RCC_BASE);
 
     rcc.write_msi_range(CLK);
     rcc.write_ahb2_enr(board::l552ze::RCC_GPIOA_AHB2EN);
@@ -29,22 +29,22 @@ pub extern "C" fn _system_init() {
 
 #[no_mangle]
 pub extern "C" fn _start() {
-    let freq = hal::common::range(CLK);
+    let freq = stm32hal::common::range(CLK);
     // Initialize the LED on L432KC board
-    let gpioa =     hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
-    let gpiob =     hal::gpio::Gpio::init(board::l552ze::GPIOB_BASE);
-    let gpioc =     hal::gpio::Gpio::init(board::l552ze::GPIOC_BASE);
-    let gpiod =     hal::gpio::Gpio::init(board::l552ze::GPIOD_BASE);
-    let seq_timer = hal::timer::Timer::init(board::l552ze::TIMER2_BASE);
-    let int_timer = hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
-    let mut nvic =  hal::nvic::Nvic::init(board::l552ze::NVIC_BASE);
-    let spi =       hal::spi::Spi::init(board::l552ze::SPI1_BASE);
-    let usart =     hal::usart::Usart::init(board::l552ze::USART3_BASE);
+    let gpioa =     stm32hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
+    let gpiob =     stm32hal::gpio::Gpio::init(board::l552ze::GPIOB_BASE);
+    let gpioc =     stm32hal::gpio::Gpio::init(board::l552ze::GPIOC_BASE);
+    let gpiod =     stm32hal::gpio::Gpio::init(board::l552ze::GPIOD_BASE);
+    let seq_timer = stm32hal::timer::Timer::init(board::l552ze::TIMER2_BASE);
+    let int_timer = stm32hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
+    let mut nvic =  stm32hal::nvic::Nvic::init(board::l552ze::NVIC_BASE);
+    let spi =       stm32hal::spi::Spi::init(board::l552ze::SPI1_BASE);
+    let usart =     stm32hal::usart::Usart::init(board::l552ze::USART3_BASE);
     
     /* USART */
     gpiod.otype(board::l552ze::USART3_TX, board::l552ze::USART_MODE, board::l552ze::USART_OTYPE, board::l552ze::USART_AF);
     gpiod.otype(board::l552ze::USART3_RX, board::l552ze::USART_MODE, board::l552ze::USART_OTYPE, board::l552ze::USART_AF);
-    usart.open(hal::usart::WordLen::Bits8, hal::usart::StopLen::StopBit1, hal::usart::BaudRate::Baud921600, 16000, hal::usart::OverSample::Oversample16);
+    usart.open(stm32hal::usart::WordLen::Bits8, stm32hal::usart::StopLen::StopBit1, stm32hal::usart::BaudRate::Baud921600, 16000, stm32hal::usart::OverSample::Oversample16);
 
     /* SPI 1 Setup */
     gpiob.otype(board::l552ze::SPI1_MISO, board::l552ze::SPI_MODE, board::l552ze::SPI_OTYPE, board::l552ze::SPI_AF);
@@ -52,17 +52,17 @@ pub extern "C" fn _start() {
     gpiob.otype(board::l552ze::SPI1_SCK, board::l552ze::SPI_MODE, board::l552ze::SPI_OTYPE, board::l552ze::SPI_AF);
     gpioa.otype(board::l552ze::SPI1_NSS, board::l552ze::SPI_MODE, board::l552ze::SPI_OTYPE, board::l552ze::SPI_AF);
     gpioa.otype(board::l552ze::SPI1_SS, board::l552ze::SPI1_SS_MODE, board::l552ze::SPI1_SS_OTYPE, board::l552ze::SPI1_SS_AF);
-    spi.open(hal::spi::BaudRateDiv::Clk16, driver::w5200::CLK_SETUP, driver::w5200::BIT_SETUP, driver::w5200::WORD_SETUP);
+    spi.open(stm32hal::spi::BaudRateDiv::Clk16, driver::w5200::CLK_SETUP, driver::w5200::BIT_SETUP, driver::w5200::WORD_SETUP);
     /* LED Setup */
     gpioa.otype(board::l552ze::LED_RED_PIN, board::l552ze::USER_LED_MODE, board::l552ze::USER_LED_OTYPE, board::l552ze::USER_LED_AF);
     gpiob.otype(board::l552ze::LED_BLU_PIN, board::l552ze::USER_LED_MODE, board::l552ze::USER_LED_OTYPE, board::l552ze::USER_LED_AF);
     gpioc.otype(board::l552ze::LED_GRN_PIN, board::l552ze::USER_LED_MODE, board::l552ze::USER_LED_OTYPE, board::l552ze::USER_LED_AF);
     
-    seq_timer.open(hal::timer::TimerType::Cont, hal::timer::Direction::Upcount);
+    seq_timer.open(stm32hal::timer::TimerType::Cont, stm32hal::timer::Direction::Upcount);
     seq_timer.set_scl(1000, freq, freq);
     seq_timer.start();
 
-    int_timer.open(hal::timer::TimerType::Cont, hal::timer::Direction::Upcount);
+    int_timer.open(stm32hal::timer::TimerType::Cont, stm32hal::timer::Direction::Upcount);
     int_timer.set_scl(1000, freq, freq);
     int_timer.set_interrupt();
     int_timer.start();
@@ -113,8 +113,8 @@ pub extern "C" fn __aeabi_unwind_cpp_pr0() {
 
 #[no_mangle]
 pub extern "C" fn TIM3_IRQHandler() {
-    let gpioa =     hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
-    let int_timer = hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
+    let gpioa =     stm32hal::gpio::Gpio::init(board::l552ze::GPIOA_BASE);
+    let int_timer = stm32hal::timer::Timer::init(board::l552ze::TIMER3_BASE);
 
     int_timer.clr_flag();
 
